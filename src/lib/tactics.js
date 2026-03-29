@@ -95,13 +95,13 @@ export const TACTICS = {
 export const getSeverityColor = (severity) => {
   switch (severity) {
     case 'high':
-      return '#ff3b5c'
+      return '#fb7185'
     case 'moderate':
-      return '#ff6b35'
+      return '#fb923c'
     case 'low':
-      return '#ffaa00'
+      return '#fbbf24'
     default:
-      return '#ff6b35'
+      return '#fb923c'
   }
 }
 

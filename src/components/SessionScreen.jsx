@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Header from './Header'
 import Transcript from './Transcript'
 import TacticAlertFeed from './TacticAlertFeed'
 import CounterMovePanel from './CounterMovePanel'
 import PowerMeter from './PowerMeter'
-import DemoMode from './DemoMode'
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition'
 import { useClaudeAnalysis } from '../hooks/useClaudeAnalysis'
 import { useDemoMode } from '../hooks/useDemoMode'
@@ -41,10 +41,11 @@ export default function SessionScreen({ context, mode, room, onBack }) {
     isAnalyzing,
     error: analysisError,
     triggerAnalysis,
+    injectAnalysis,
     reset: resetAnalysis
   } = useClaudeAnalysis(transcript, context, transcriptVersion)
 
-  const demoMode = useDemoMode({ addTranscriptEntry, triggerAnalysis })
+  const demoMode = useDemoMode({ addTranscriptEntry, injectAnalysis })
 
   const isVersus = mode === 'versus'
   const webrtc = useWebRTC({
@@ -66,7 +67,7 @@ export default function SessionScreen({ context, mode, room, onBack }) {
       resetAnalysis()
       const timer = setTimeout(() => {
         demoMode.startDemo()
-      }, 1000)
+      }, 500)
       return () => {
         clearTimeout(timer)
         demoMode.stopDemo()
@@ -145,10 +146,9 @@ export default function SessionScreen({ context, mode, room, onBack }) {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#06060b] overflow-hidden relative">
-      <div className="absolute inset-0 bg-grid-pattern opacity-[0.5]" />
-      <div className="absolute inset-0 bg-radial-glow" />
-      <div className="absolute inset-0 scanline" />
+    <div className="h-screen flex flex-col bg-[#09090b] overflow-hidden relative">
+      <div className="absolute inset-0 bg-mesh" />
+      <div className="absolute inset-0 bg-dots opacity-30" />
 
       <div className="relative z-10 flex flex-col h-full">
         <Header
@@ -167,19 +167,19 @@ export default function SessionScreen({ context, mode, room, onBack }) {
         />
 
         {!isSupported && (mode === 'live' || mode === 'versus') && (
-          <div className="px-6 py-2.5 bg-[#ff6b35]/[0.08] border-b border-[#ff6b35]/20">
-            <p className="text-[#ff6b35] text-[12px] text-center font-medium">
+          <div className="px-6 py-2.5 bg-amber-500/[0.08] border-b border-amber-500/20">
+            <p className="text-amber-400 text-[12px] text-center font-medium">
               Speech recognition requires Google Chrome.
             </p>
           </div>
         )}
 
         {micError && (mode === 'live' || mode === 'versus') && (
-          <div className="px-6 py-3 bg-[#ff6b35]/[0.08] border-b border-[#ff6b35]/20">
+          <div className="px-6 py-3 bg-amber-500/[0.08] border-b border-amber-500/20">
             <div className="flex items-center justify-center gap-3">
-              <p className="text-[#ff6b35] text-[12px] font-medium">{micError}</p>
+              <p className="text-amber-400 text-[12px] font-medium">{micError}</p>
               {permissionDenied && (
-                <button onClick={handleRetryMic} className="ml-2 px-3 py-1 rounded-md text-[11px] font-bold bg-[#ff6b35]/15 text-[#ff6b35] border border-[#ff6b35]/25 hover:bg-[#ff6b35]/25 transition-all">
+                <button onClick={handleRetryMic} className="ml-2 px-3 py-1 rounded-md text-[11px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-all">
                   Retry
                 </button>
               )}
@@ -188,46 +188,46 @@ export default function SessionScreen({ context, mode, room, onBack }) {
         )}
 
         {isVersus && room?.peerLeft && (
-          <div className="px-6 py-2 bg-[#ff3b5c]/[0.06] border-b border-[#ff3b5c]/15">
-            <p className="text-[#ff3b5c]/70 text-[11px] text-center">Opponent disconnected</p>
+          <div className="px-6 py-2 bg-rose-500/[0.06] border-b border-rose-500/15">
+            <p className="text-rose-400/70 text-[11px] text-center">Opponent disconnected</p>
           </div>
         )}
 
-        {analysisError && agentEnabled && (
-          <div className="px-6 py-2 bg-[#ff3b5c]/[0.06] border-b border-[#ff3b5c]/15">
-            <p className="text-[#ff3b5c]/70 text-[11px] text-center font-mono">Analysis: {analysisError}</p>
+        {analysisError && agentEnabled && mode !== 'demo' && (
+          <div className="px-6 py-2 bg-rose-500/[0.06] border-b border-rose-500/15">
+            <p className="text-rose-400/70 text-[11px] text-center font-mono">Analysis: {analysisError}</p>
           </div>
         )}
 
         <div className="flex-1 flex min-h-0">
           {showTranscript && (
-            <div className={`${agentEnabled ? 'w-[40%]' : 'w-full'} border-r border-white/[0.04] flex flex-col relative transition-all duration-500`}>
+            <div className={`${agentEnabled ? 'w-[40%]' : 'w-full'} border-r border-white/[0.06] flex flex-col relative transition-all duration-500`}>
               {agentEnabled && (
-                <div className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#00f0ff]/8 to-transparent" />
+                <div className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-transparent via-indigo-500/10 to-transparent" />
               )}
 
-              <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-white/[0.04]">
-                <div className="flex items-center justify-center w-5 h-5 rounded bg-white/[0.04]">
-                  <span className="text-[11px] opacity-50">📝</span>
+              <div className="flex items-center gap-4 px-6 py-4 border-b border-white/[0.06]">
+                <div className="flex items-center justify-center w-5 h-5 rounded-md bg-white/[0.04]">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/40"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>
                 </div>
-                <h3 className="text-white/40 text-[11px] font-bold uppercase tracking-[0.15em]">
+                <h3 className="text-white/45 text-[11px] font-semibold uppercase tracking-wider">
                   Transcript
                 </h3>
                 {isVersus && webrtc.isCallActive && (
                   <div className="ml-auto flex items-center gap-1.5">
-                    <div className="w-[5px] h-[5px] rounded-full bg-[#00ff88] shadow-[0_0_8px_rgba(0,255,136,0.5)]" />
-                    <span className="text-[#00ff88]/40 text-[9px] font-bold tracking-wider uppercase">Connected</span>
+                    <div className="w-[5px] h-[5px] rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+                    <span className="text-emerald-400/50 text-[9px] font-semibold tracking-wider uppercase">Connected</span>
                   </div>
                 )}
                 {isListening && !isVersus && !isMuted && (
                   <div className="ml-auto flex items-center gap-1.5">
-                    <div className="w-[5px] h-[5px] rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" />
-                    <span className="text-red-400/40 text-[9px] font-bold tracking-wider uppercase">Rec</span>
+                    <div className="w-[5px] h-[5px] rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)] animate-pulse" />
+                    <span className="text-rose-400/50 text-[9px] font-semibold tracking-wider uppercase">Rec</span>
                   </div>
                 )}
                 {isMuted && (
                   <div className="ml-auto flex items-center gap-1.5">
-                    <span className="text-[#ff3b5c]/40 text-[9px] font-bold tracking-wider uppercase">Muted</span>
+                    <span className="text-rose-400/50 text-[9px] font-semibold tracking-wider uppercase">Muted</span>
                   </div>
                 )}
               </div>
@@ -247,8 +247,8 @@ export default function SessionScreen({ context, mode, room, onBack }) {
           {agentEnabled && (
             <div className="flex-1 flex flex-col min-h-0">
               <div className="flex-1 min-h-0 overflow-y-auto">
-                <div className={`${showTranscript ? 'h-[55%]' : 'h-[50%]'} min-h-[220px] border-b border-white/[0.04] relative`}>
-                  <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff3b5c]/8 to-transparent" />
+                <div className={`${showTranscript ? 'h-[55%]' : 'h-[50%]'} min-h-[220px] border-b border-white/[0.06] relative`}>
+                  <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-rose-500/10 to-transparent" />
                   <TacticAlertFeed tactics={tactics} />
                 </div>
                 <div className="min-h-[220px]">
@@ -276,17 +276,29 @@ export default function SessionScreen({ context, mode, room, onBack }) {
         />
       </div>
 
-      {mode === 'demo' && (
-        <DemoMode
-          isPlaying={demoMode.isPlaying}
-          isPaused={demoMode.isPaused}
-          isComplete={demoMode.isComplete}
-          currentLine={demoMode.currentLine}
-          onPause={demoMode.pauseDemo}
-          onResume={demoMode.resumeDemo}
-          onStop={handleEnd}
-        />
-      )}
+      <AnimatePresence>
+        {mode === 'demo' && demoMode.narratorMessage && (
+          <motion.div
+            key="narrator-cloud"
+            initial={{ opacity: 0, y: -30, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-xl w-[90%]"
+          >
+            <div className="relative bg-[#0f0f14]/95 backdrop-blur-2xl border border-violet-500/20 rounded-2xl px-8 py-5 shadow-[0_8px_60px_rgba(139,92,246,0.15),0_0_0_1px_rgba(139,92,246,0.08)]">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/[0.06] to-indigo-500/[0.03]" />
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-400/30 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-400/15 to-transparent" />
+              <p className="relative text-white/80 text-base font-medium text-center leading-relaxed">
+                {demoMode.narratorMessage}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* DemoMode bottom bar hidden for clean demo presentation */}
     </div>
   )
 }

@@ -77,6 +77,17 @@ npm run dev    # Runs both: concurrently "vite --host" "node server.js"
 - **Audio not playing in versus** — Fixed: Race condition where host's offer arrived at guest while guest's `startCall()` was still awaiting `getUserMedia`. Signal handler saw `startedRef=true` but `pcRef=null` and silently dropped the offer. Fix: added `pcReadyPromise` so signal handler waits for PC to be fully created before processing. Also added fallback for empty `e.streams` in `ontrack`, audio play retry on ICE connect, and `touchstart` listener for mobile autoplay.
 - **Transcript duplicates on remote** — Fixed: remote entries use `sourceId` matching via `updateOrAddRemoteEntry()`.
 
-## Design
+## Design System (v2)
 
-Dark tactical UI. Background: `#06060b`, cyan accent: `#00f0ff`, red accent: `#ff3b5c`, green: `#00ff88`. JetBrains Mono for transcript, Inter for UI. Glassmorphism cards, animated grid background, scan line effect.
+Premium dark UI with indigo/violet/rose palette. No grid or scanline effects — clean and modern.
+
+- **Background**: `#09090b` with subtle gradient mesh (`bg-mesh`) and dot pattern (`bg-dots`)
+- **Primary accent**: indigo-400 `#818cf8` → violet-400 `#a78bfa` (gradients for brand, buttons, active states)
+- **Danger/opponent**: rose-400 `#fb7185` (alerts, mute, opponent indicators)
+- **Success/suggestions**: emerald-400 `#34d399` (counter-moves, join room, connected states)
+- **Warning**: amber-400 `#fbbf24` (mic errors, browser warnings)
+- **Fonts**: Inter (UI), JetBrains Mono (code/data), Space Grotesk (`font-brand` for "PARLEY" logo)
+- **Cards**: `glass-card` — `rgba(255,255,255,0.03)` bg, 24px blur, subtle border. `gradient-border` for premium variant.
+- **Buttons**: Primary = `bg-gradient-to-r from-indigo-600 to-violet-600` with shadow. Secondary = ghost with border.
+- **Severity colors**: high `#fb7185`, moderate `#fb923c`, low `#fbbf24`
+- **Animations**: Framer Motion throughout. Subtle floats, pulse rings, shimmer loading. No harsh shakes.

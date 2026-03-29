@@ -2,8 +2,8 @@ import { motion } from 'framer-motion'
 
 export default function Header({ mode, isListening, onBack, roomCode, peerConnected, agentEnabled, onToggleAgent, isMuted, onToggleMute, onEndCall, showTranscript, onToggleTranscript }) {
   return (
-    <header className="relative flex items-center justify-between px-5 py-3 border-b border-white/[0.04] bg-[#06060b]/90 backdrop-blur-2xl z-50">
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00f0ff]/10 to-transparent" />
+    <header className="relative flex items-center justify-between px-5 py-3 border-b border-white/[0.06] bg-[#09090b]/90 backdrop-blur-2xl z-50">
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/15 to-transparent" />
 
       <div className="flex items-center gap-3">
         {onBack && !onEndCall && (
@@ -24,8 +24,8 @@ export default function Header({ mode, isListening, onBack, roomCode, peerConnec
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <span className="text-lg font-extrabold tracking-tighter text-white/90">
-            PAR<span className="text-[#00f0ff]">L</span>EY
+          <span className="font-brand text-lg font-bold tracking-tight">
+            <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">PARLEY</span>
           </span>
         </motion.div>
       </div>
@@ -33,34 +33,34 @@ export default function Header({ mode, isListening, onBack, roomCode, peerConnec
       <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
         {mode === 'live' && (
           <motion.div
-            className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-red-500/20 bg-red-500/[0.06]"
-            animate={{ opacity: isListening ? [1, 0.6, 1] : 1 }}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-rose-500/20 bg-rose-500/[0.06]"
+            animate={{ opacity: isListening ? [1, 0.7, 1] : 1 }}
             transition={{ duration: 2, repeat: isListening ? Infinity : 0 }}
           >
             <motion.div
-              className="w-2 h-2 rounded-full bg-red-500"
-              animate={{ scale: isListening ? [1, 1.3, 1] : 1 }}
+              className="w-1.5 h-1.5 rounded-full bg-rose-500"
+              animate={{ scale: isListening ? [1, 1.4, 1] : 1 }}
               transition={{ duration: 1, repeat: Infinity }}
             />
-            <span className="text-red-400/90 text-[10px] font-bold tracking-[0.15em] uppercase">Live</span>
+            <span className="text-rose-400 text-[10px] font-semibold tracking-wider uppercase">Live</span>
           </motion.div>
         )}
         {mode === 'demo' && (
-          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00f0ff]/20 bg-[#00f0ff]/[0.06]">
-            <div className="w-2 h-2 rounded-full bg-[#00f0ff] animate-pulse" />
-            <span className="text-[#00f0ff]/90 text-[10px] font-bold tracking-[0.15em] uppercase">Demo Mode</span>
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/[0.06]">
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+            <span className="text-indigo-400 text-[10px] font-semibold tracking-wider uppercase">Demo Mode</span>
           </div>
         )}
         {mode === 'versus' && (
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#a78bfa]/20 bg-[#a78bfa]/[0.06]">
-              <span className="text-[#a78bfa]/90 text-[10px]">⚔</span>
-              <span className="text-[#a78bfa]/90 text-[10px] font-bold tracking-[0.15em] uppercase">Versus</span>
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-violet-500/20 bg-violet-500/[0.06]">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-violet-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+              <span className="text-violet-400 text-[10px] font-semibold tracking-wider uppercase">Versus</span>
             </div>
             {roomCode && (
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/[0.06] bg-white/[0.02]">
-                <span className="text-white/40 text-[9px] font-mono tracking-[0.2em]">{roomCode}</span>
-                <div className={`w-1.5 h-1.5 rounded-full ${peerConnected ? 'bg-[#00ff88] shadow-[0_0_6px_rgba(0,255,136,0.5)]' : 'bg-[#ff3b5c]'}`} />
+                <span className="text-white/40 text-[10px] font-mono tracking-widest">{roomCode}</span>
+                <div className={`w-1.5 h-1.5 rounded-full ${peerConnected ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]' : 'bg-rose-400'}`} />
               </div>
             )}
           </div>
@@ -71,15 +71,15 @@ export default function Header({ mode, isListening, onBack, roomCode, peerConnec
         {onToggleAgent !== undefined && (
           <button
             onClick={onToggleAgent}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 ${
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-all duration-200 ${
               agentEnabled
-                ? 'bg-[#00f0ff]/10 text-[#00f0ff]/80 border border-[#00f0ff]/20'
-                : 'bg-white/[0.02] text-white/20 border border-white/[0.05]'
+                ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                : 'bg-white/[0.02] text-white/25 border border-white/[0.06]'
             }`}
           >
-            <div className={`w-6 h-3.5 rounded-full relative transition-all duration-300 ${agentEnabled ? 'bg-[#00f0ff]/30' : 'bg-white/10'}`}>
+            <div className={`w-6 h-3.5 rounded-full relative transition-all duration-300 ${agentEnabled ? 'bg-indigo-500/30' : 'bg-white/10'}`}>
               <motion.div
-                className={`absolute top-0.5 w-2.5 h-2.5 rounded-full ${agentEnabled ? 'bg-[#00f0ff]' : 'bg-white/30'}`}
+                className={`absolute top-0.5 w-2.5 h-2.5 rounded-full ${agentEnabled ? 'bg-indigo-400' : 'bg-white/30'}`}
                 animate={{ left: agentEnabled ? 12 : 2 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
@@ -94,7 +94,7 @@ export default function Header({ mode, isListening, onBack, roomCode, peerConnec
             className={`p-2 rounded-lg transition-all duration-200 ${
               showTranscript
                 ? 'bg-white/[0.03] text-white/40 border border-white/[0.06] hover:text-white/60'
-                : 'bg-[#a78bfa]/15 text-[#a78bfa] border border-[#a78bfa]/25'
+                : 'bg-violet-500/15 text-violet-400 border border-violet-500/25'
             }`}
             title={showTranscript ? 'Hide Transcript' : 'Show Transcript'}
           >
@@ -120,7 +120,7 @@ export default function Header({ mode, isListening, onBack, roomCode, peerConnec
             onClick={onToggleMute}
             className={`p-2 rounded-lg transition-all duration-200 ${
               isMuted
-                ? 'bg-[#ff3b5c]/15 text-[#ff3b5c] border border-[#ff3b5c]/25'
+                ? 'bg-rose-500/15 text-rose-400 border border-rose-500/25'
                 : 'bg-white/[0.03] text-white/40 border border-white/[0.06] hover:text-white/60'
             }`}
             whileTap={{ scale: 0.9 }}
@@ -146,7 +146,7 @@ export default function Header({ mode, isListening, onBack, roomCode, peerConnec
         {onEndCall && (
           <motion.button
             onClick={onEndCall}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ff3b5c]/10 text-[#ff3b5c] text-[10px] font-bold uppercase tracking-wider border border-[#ff3b5c]/20 hover:bg-[#ff3b5c]/20 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-400 text-[10px] font-semibold uppercase tracking-wider border border-rose-500/20 hover:bg-rose-500/20 transition-all"
             whileTap={{ scale: 0.95 }}
           >
             End
@@ -158,7 +158,7 @@ export default function Header({ mode, isListening, onBack, roomCode, peerConnec
             {[...Array(4)].map((_, i) => (
               <motion.div
                 key={i}
-                className="w-[3px] bg-[#00f0ff]/60 rounded-full"
+                className="w-[3px] bg-indigo-400/60 rounded-full"
                 animate={{ height: [4, 12 + Math.random() * 8, 4] }}
                 transition={{ duration: 0.5 + i * 0.1, repeat: Infinity, ease: 'easeInOut' }}
               />

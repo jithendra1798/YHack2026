@@ -44,6 +44,6 @@ Facts: ${context.keyFacts}
 BATNA: ${context.batna}
 
 TRANSCRIPT:
-${transcript.map((t) => `[${t.speaker === 'you' ? 'YOU' : 'THEM'}] ${t.text}`).join('\n')}
+${transcript.filter((t) => t.speaker !== 'narrator').map((t) => `[${t.speaker === 'you' ? 'YOU' : 'THEM'}] ${t.text}`).join('\n')}
 
 Analyze latest exchange. SHORT responses only. JSON only.`

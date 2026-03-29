@@ -100,13 +100,13 @@ export default function RoomScreen({ room, onReady, onBack }) {
 
   const isFormValid = context.negotiationType && context.userGoal
 
-  const inputClass = 'w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-4 py-3 text-white/90 text-sm placeholder:text-white/15 focus:outline-none focus:border-[#00f0ff]/40 focus:bg-white/[0.05] transition-all duration-300'
+  const inputClass = 'w-full bg-white/[0.04] border border-white/[0.07] rounded-xl px-4 py-3.5 text-white/90 text-[13px] placeholder:text-white/20 focus:outline-none focus:border-indigo-500/40 focus:bg-white/[0.06] focus:ring-1 focus:ring-indigo-500/20 transition-all duration-300'
 
   if (!roomCode) {
     return (
-      <div className="min-h-screen bg-[#06060b] flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-100" />
-        <div className="absolute inset-0 bg-radial-glow" />
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-mesh" />
+        <div className="absolute inset-0 bg-dots opacity-60" />
 
         <motion.div
           className="w-full max-w-lg relative z-10"
@@ -124,39 +124,39 @@ export default function RoomScreen({ room, onReady, onBack }) {
             Back
           </button>
 
-          <h1 className="text-3xl font-extrabold text-white tracking-tight mb-1">
-            Two-Player <span className="text-[#00f0ff]">Mode</span>
+          <h1 className="font-brand text-3xl font-bold text-white tracking-tight mb-1">
+            Two-Player <span className="bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">Mode</span>
           </h1>
-          <p className="text-white/30 text-sm mb-8">
+          <p className="text-white/40 text-sm mb-8">
             Negotiate against another person. Each gets their own AI agent.
           </p>
 
           {(roomError || !isConnected) && (
-            <div className="mb-6 px-4 py-3 rounded-xl bg-[#ff3b5c]/[0.08] border border-[#ff3b5c]/20">
-              <p className="text-[#ff3b5c] text-xs">
+            <div className="mb-6 px-4 py-3 rounded-xl bg-rose-500/[0.08] border border-rose-500/20">
+              <p className="text-rose-400 text-xs">
                 {roomError || 'Connecting to server...'}
               </p>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-5">
             <motion.button
               onClick={handleCreate}
               disabled={!isConnected}
-              className="glass-card rounded-2xl p-6 text-left hover:border-[#00f0ff]/20 transition-all group disabled:opacity-40"
+              className="glass-card rounded-2xl p-7 text-left hover:border-indigo-500/25 transition-all group disabled:opacity-40"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <div className="w-10 h-10 rounded-xl bg-[#00f0ff]/10 flex items-center justify-center mb-4 group-hover:bg-[#00f0ff]/15 transition-all">
-                <span className="text-lg">+</span>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/15 to-violet-500/15 flex items-center justify-center mb-4 group-hover:from-indigo-500/25 group-hover:to-violet-500/25 transition-all">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-indigo-400"><path d="M12 5v14M5 12h14" /></svg>
               </div>
               <h3 className="text-white font-semibold mb-1">Create Room</h3>
-              <p className="text-white/25 text-xs">You&apos;re the negotiator</p>
+              <p className="text-white/30 text-xs">You&apos;re the negotiator</p>
             </motion.button>
 
-            <div className="glass-card rounded-2xl p-6">
-              <div className="w-10 h-10 rounded-xl bg-[#00ff88]/10 flex items-center justify-center mb-4">
-                <span className="text-lg">→</span>
+            <div className="glass-card rounded-2xl p-7">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3" /></svg>
               </div>
               <h3 className="text-white font-semibold mb-3">Join Room</h3>
               <div className="flex gap-2">
@@ -166,18 +166,18 @@ export default function RoomScreen({ room, onReady, onBack }) {
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   placeholder="CODE"
                   maxLength={6}
-                  className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-white text-sm font-mono tracking-[0.2em] text-center uppercase focus:outline-none focus:border-[#00ff88]/40 transition-all"
+                  className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-white text-sm font-mono tracking-[0.2em] text-center uppercase focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all"
                 />
                 <button
                   onClick={handleJoin}
                   disabled={!isConnected || joinCode.length < 4}
-                  className="px-3 py-2 rounded-lg bg-[#00ff88]/10 text-[#00ff88] text-sm font-semibold border border-[#00ff88]/20 hover:bg-[#00ff88]/20 transition-all disabled:opacity-30"
+                  className="px-3 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 text-sm font-semibold border border-emerald-500/20 hover:bg-emerald-500/20 transition-all disabled:opacity-30"
                 >
                   Join
                 </button>
               </div>
               {joinError && (
-                <p className="text-[#ff3b5c] text-[10px] mt-2">{joinError}</p>
+                <p className="text-rose-400 text-[11px] mt-2">{joinError}</p>
               )}
             </div>
           </div>
@@ -187,9 +187,9 @@ export default function RoomScreen({ room, onReady, onBack }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#06060b] flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 bg-grid-pattern opacity-100" />
-      <div className="absolute inset-0 bg-radial-glow" />
+    <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-mesh" />
+      <div className="absolute inset-0 bg-dots opacity-60" />
 
       <motion.div
         className="w-full max-w-lg relative z-10"
@@ -207,29 +207,29 @@ export default function RoomScreen({ room, onReady, onBack }) {
           Leave Room
         </button>
 
-        <div className="glass-card rounded-2xl p-6 mb-6">
+        <div className="glass-card rounded-2xl p-7 mb-7">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-white/25 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Room Code</p>
-              <p className="text-3xl font-extrabold font-mono tracking-[0.3em] text-[#00f0ff]">
+              <p className="text-white/30 text-[10px] font-semibold uppercase tracking-widest mb-1.5">Room Code</p>
+              <p className="text-3xl font-bold font-mono tracking-[0.3em] bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
                 {roomCode}
               </p>
             </div>
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center gap-2">
-                <span className="text-white/20 text-[9px] uppercase tracking-wider">
+                <span className="text-white/30 text-[10px] font-medium">
                   You: {role === 'host' ? 'Negotiator' : 'Counter-party'}
                 </span>
               </div>
               <button
                 onClick={() => navigator.clipboard.writeText(roomCode)}
-                className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-white/40 text-[10px] font-bold hover:bg-white/[0.08] hover:text-white/60 transition-all"
+                className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-white/40 text-[11px] font-medium hover:bg-white/[0.08] hover:text-white/60 transition-all border border-white/[0.06]"
               >
                 Copy Code
               </button>
               <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${peerConnected ? 'bg-[#00ff88] shadow-[0_0_8px_rgba(0,255,136,0.5)]' : 'bg-white/15 animate-pulse'}`} />
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${peerConnected ? 'text-[#00ff88]/70' : 'text-white/25'}`}>
+                <div className={`w-2 h-2 rounded-full ${peerConnected ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : 'bg-white/15 animate-pulse'}`} />
+                <span className={`text-[10px] font-medium ${peerConnected ? 'text-emerald-400/70' : 'text-white/25'}`}>
                   {peerConnected ? 'Opponent Connected' : 'Waiting for opponent...'}
                 </span>
               </div>
@@ -238,8 +238,8 @@ export default function RoomScreen({ room, onReady, onBack }) {
         </div>
 
         {peerLeft && (
-          <div className="mb-4 px-4 py-3 rounded-xl bg-[#ff3b5c]/[0.08] border border-[#ff3b5c]/20">
-            <p className="text-[#ff3b5c] text-xs">Opponent disconnected.</p>
+          <div className="mb-4 px-4 py-3 rounded-xl bg-rose-500/[0.08] border border-rose-500/20">
+            <p className="text-rose-400 text-xs">Opponent disconnected.</p>
           </div>
         )}
 
@@ -248,38 +248,39 @@ export default function RoomScreen({ room, onReady, onBack }) {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="glass-card rounded-2xl p-6"
+              className="glass-card rounded-2xl p-8"
             >
-              <div className="flex items-center gap-2 mb-5">
-                <h2 className="text-white/60 text-xs font-bold tracking-[0.15em] uppercase">
-                  Your Private Briefing
-                </h2>
-                <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                <span className="text-white/15 text-[9px]">Pre-filled &bull; edit if needed</span>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500/15 to-violet-500/15 flex items-center justify-center">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-indigo-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                </div>
+                <h2 className="text-white/60 text-sm font-semibold">Your Private Briefing</h2>
+                <div className="h-px flex-1 bg-gradient-to-r from-white/[0.06] to-transparent" />
+                <span className="text-white/20 text-[10px]">Pre-filled · edit if needed</span>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-white/30 text-[10px] uppercase tracking-widest mb-1.5">Type</label>
+                  <label className="block text-white/35 text-xs font-medium mb-1.5">Type</label>
                   <select value={context.negotiationType} onChange={handleChange('negotiationType')} className={`${inputClass} appearance-none cursor-pointer`}>
-                    <option value="" className="bg-[#0d0d15]">Select...</option>
-                    {NEGOTIATION_TYPES.map((t) => <option key={t} value={t} className="bg-[#0d0d15]">{t}</option>)}
+                    <option value="" className="bg-[#111113]">Select...</option>
+                    {NEGOTIATION_TYPES.map((t) => <option key={t} value={t} className="bg-[#111113]">{t}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-white/30 text-[10px] uppercase tracking-widest mb-1.5">Your Goal</label>
+                  <label className="block text-white/35 text-xs font-medium mb-1.5">Your Goal</label>
                   <input type="text" value={context.userGoal} onChange={handleChange('userGoal')} placeholder="What are you trying to achieve?" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-white/30 text-[10px] uppercase tracking-widest mb-1.5">Opposing Party</label>
+                  <label className="block text-white/35 text-xs font-medium mb-1.5">Opposing Party</label>
                   <input type="text" value={context.otherPartyRole} onChange={handleChange('otherPartyRole')} placeholder="Who are you negotiating with?" className={inputClass} />
                 </div>
                 <div>
-                  <label className="block text-white/30 text-[10px] uppercase tracking-widest mb-1.5">Key Facts</label>
+                  <label className="block text-white/35 text-xs font-medium mb-1.5">Key Facts</label>
                   <textarea value={context.keyFacts} onChange={handleChange('keyFacts')} placeholder="Your leverage and data points" rows={2} className={`${inputClass} resize-none`} />
                 </div>
                 <div>
-                  <label className="block text-white/30 text-[10px] uppercase tracking-widest mb-1.5">BATNA</label>
+                  <label className="block text-white/35 text-xs font-medium mb-1.5">BATNA</label>
                   <input type="text" value={context.batna} onChange={handleChange('batna')} placeholder="Your best alternative" className={inputClass} />
                 </div>
               </div>
@@ -287,10 +288,10 @@ export default function RoomScreen({ room, onReady, onBack }) {
               <motion.button
                 onClick={handleSubmitContext}
                 disabled={!isFormValid}
-                className={`w-full mt-5 py-3.5 rounded-xl font-semibold text-sm transition-all ${
+                className={`w-full mt-7 py-3.5 rounded-xl font-semibold text-sm transition-all ${
                   isFormValid
-                    ? 'bg-[#00f0ff]/10 border border-[#00f0ff]/30 text-[#00f0ff] hover:bg-[#00f0ff]/20'
-                    : 'bg-white/[0.02] border border-white/[0.05] text-white/15 cursor-not-allowed'
+                    ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 hover:brightness-110'
+                    : 'bg-white/[0.04] border border-white/[0.06] text-white/20 cursor-not-allowed'
                 }`}
                 whileHover={isFormValid ? { scale: 1.01 } : {}}
                 whileTap={isFormValid ? { scale: 0.99 } : {}}
@@ -304,22 +305,22 @@ export default function RoomScreen({ room, onReady, onBack }) {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="glass-card rounded-2xl p-8 text-center"
+              className="glass-card rounded-2xl p-10 text-center"
             >
               <motion.div
-                className="w-12 h-12 rounded-xl bg-[#00f0ff]/10 flex items-center justify-center mx-auto mb-4"
+                className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/15 to-violet-500/15 flex items-center justify-center mx-auto mb-4"
                 animate={{ scale: [1, 1.1, 1] }}
                 transition={{ duration: 2, repeat: Infinity }}
               >
-                <span className="text-xl">✓</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-indigo-400"><polyline points="20 6 9 17 4 12" /></svg>
               </motion.div>
-              <p className="text-white/50 text-sm">You&apos;re ready.</p>
-              <p className="text-white/20 text-xs mt-1">
+              <p className="text-white/60 text-sm font-medium">You&apos;re ready.</p>
+              <p className="text-white/25 text-xs mt-1">
                 {peerConnected
                   ? 'Waiting for opponent to submit their briefing...'
                   : 'Waiting for opponent to join and submit briefing...'}
               </p>
-              <p className="text-white/10 text-[10px] mt-3">Conversation starts automatically when both are ready</p>
+              <p className="text-white/15 text-[11px] mt-3">Conversation starts automatically when both are ready</p>
             </motion.div>
           )}
         </AnimatePresence>

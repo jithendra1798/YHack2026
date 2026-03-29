@@ -37,11 +37,14 @@ export function useClaudeAnalysis(transcript, context, transcriptVersion) {
     const currentContext = contextRef.current
 
     if (!currentTranscript?.length || !currentContext) return
+    // Skip if transcript only has narrator entries (no actual conversation yet)
+    const realEntries = currentTranscript.filter((t) => t.speaker !== 'narrator')
+    if (!realEntries.length) return
 
     const now = Date.now()
     const timeSinceLastCall = now - lastCallTimeRef.current
-    if (timeSinceLastCall < 3000) {
-      setTimeout(() => analyzeTranscript(), 3000 - timeSinceLastCall + 100)
+    if (timeSinceLastCall < 2000) {
+      setTimeout(() => analyzeTranscript(), 2000 - timeSinceLastCall + 50)
       return
     }
 
@@ -124,12 +127,16 @@ export function useClaudeAnalysis(transcript, context, transcriptVersion) {
       }
     } catch (err) {
       console.error('Claude analysis error:', err)
-      setError(err.message)
 
-      if (retryCountRef.current < 2) {
+      if (retryCountRef.current < 4) {
         retryCountRef.current++
         lastCallTimeRef.current = 0
-        setTimeout(() => analyzeTranscript(), 2000)
+        // Exponential backoff: 1s, 2s, 4s, 8s
+        const backoff = Math.min(1000 * Math.pow(2, retryCountRef.current - 1), 8000)
+        setTimeout(() => analyzeTranscript(), backoff)
+      } else {
+        // Only surface error after all retries exhausted
+        setError(err.message)
       }
     } finally {
       setIsAnalyzing(false)
@@ -149,7 +156,7 @@ export function useClaudeAnalysis(transcript, context, transcriptVersion) {
 
     debounceTimerRef.current = setTimeout(() => {
       analyzeTranscript()
-    }, 2500)
+    }, 1500)
 
     return () => {
       if (debounceTimerRef.current) {
@@ -163,6 +170,22 @@ export function useClaudeAnalysis(transcript, context, transcriptVersion) {
     retryCountRef.current = 0
     return analyzeTranscript()
   }, [analyzeTranscript])
+
+  const injectAnalysis = useCallback((data) => {
+    if (data.tactics?.length) {
+      const newTactics = data.tactics.map((t) => ({
+        ...t,
+        id: Date.now() + Math.random(),
+        timestamp: new Date()
+      }))
+      allTacticsRef.current = [...newTactics, ...allTacticsRef.current]
+      setTactics([...allTacticsRef.current])
+    }
+    if (data.counterMoves?.length) setCounterMoves(data.counterMoves)
+    if (typeof data.powerScore === 'number') setPowerScore(Math.max(0, Math.min(100, data.powerScore)))
+    if (data.powerReasoning) setPowerReasoning(data.powerReasoning)
+    if (data.situationRead) setSituationRead(data.situationRead)
+  }, [])
 
   const reset = useCallback(() => {
     setTactics([])
@@ -185,6 +208,7 @@ export function useClaudeAnalysis(transcript, context, transcriptVersion) {
     isAnalyzing,
     error,
     triggerAnalysis,
+    injectAnalysis,
     reset
   }
 }

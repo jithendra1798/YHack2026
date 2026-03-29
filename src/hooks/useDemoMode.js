@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { DEMO_SCRIPT } from '../lib/demoScript'
 
-export function useDemoMode({ addTranscriptEntry, triggerAnalysis }) {
+export function useDemoMode({ addTranscriptEntry, injectAnalysis }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentLine, setCurrentLine] = useState(-1)
   const [isPaused, setIsPaused] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
+  const [narratorMessage, setNarratorMessage] = useState(null)
 
   const voicesRef = useRef([])
   const youVoiceRef = useRef(null)
@@ -43,9 +44,15 @@ export function useDemoMode({ addTranscriptEntry, triggerAnalysis }) {
       }
 
       const utterance = new SpeechSynthesisUtterance(text)
-      utterance.voice = speaker === 'you' ? youVoiceRef.current : themVoiceRef.current
-      utterance.rate = 0.95
-      utterance.pitch = speaker === 'you' ? 1.0 : 0.85
+      if (speaker === 'narrator') {
+        utterance.voice = youVoiceRef.current
+        utterance.rate = 1.0
+        utterance.pitch = 1.05
+      } else {
+        utterance.voice = speaker === 'you' ? youVoiceRef.current : themVoiceRef.current
+        utterance.rate = 1.05
+        utterance.pitch = speaker === 'you' ? 1.0 : 0.85
+      }
       utterance.volume = 1.0
 
       utterance.onend = () => resolve()
@@ -78,6 +85,7 @@ export function useDemoMode({ addTranscriptEntry, triggerAnalysis }) {
     setIsPlaying(true)
     setIsComplete(false)
     setCurrentLine(-1)
+    setNarratorMessage(null)
 
     for (let i = 0; i < DEMO_SCRIPT.length; i++) {
       if (cancelledRef.current) break
@@ -90,31 +98,51 @@ export function useDemoMode({ addTranscriptEntry, triggerAnalysis }) {
       const line = DEMO_SCRIPT[i]
       setCurrentLine(i)
 
+      // Pause before this line
       await wait(line.delay)
       if (cancelledRef.current) break
 
-      addTranscriptEntry({
-        speaker: line.speaker,
-        text: line.text,
-        timestamp: new Date()
-      })
+      if (line.speaker === 'narrator') {
+        // ── NARRATOR: show cloud popup, speak, then hide cloud ──
+        setNarratorMessage(line.text)
+        await speak(line.speakText || line.text, 'narrator')
+        if (cancelledRef.current) break
+        // Brief hold so text is readable
+        await wait(400)
+        setNarratorMessage(null)
+        await wait(200)
+      } else {
+        // ── CONVERSATION: add to transcript, speak, inject analysis ──
+        addTranscriptEntry({
+          speaker: line.speaker,
+          text: line.text,
+          timestamp: new Date()
+        })
 
-      await speak(line.text, line.speaker)
-      if (cancelledRef.current) break
+        // Inject pre-seeded analysis ~1s after line appears (simulates AI processing)
+        if (line.inject && injectAnalysis) {
+          setTimeout(() => {
+            if (!cancelledRef.current) {
+              injectAnalysis(line.inject)
+            }
+          }, 1000)
+        }
 
-      await wait(1000)
-      if (cancelledRef.current) break
+        // Speak the line
+        await speak(line.text, line.speaker)
+        if (cancelledRef.current) break
 
-      await triggerAnalysis()
-
-      await wait(2000)
+        // Natural gap between conversation lines
+        await wait(300)
+      }
     }
 
     if (!cancelledRef.current) {
       setIsComplete(true)
     }
+    setNarratorMessage(null)
     setIsPlaying(false)
-  }, [addTranscriptEntry, triggerAnalysis, speak, wait])
+  }, [addTranscriptEntry, injectAnalysis, speak, wait])
 
   const pauseDemo = useCallback(() => {
     pausedRef.current = true
@@ -135,6 +163,7 @@ export function useDemoMode({ addTranscriptEntry, triggerAnalysis }) {
     setIsPlaying(false)
     setIsPaused(false)
     setCurrentLine(-1)
+    setNarratorMessage(null)
   }, [])
 
   return {
@@ -142,6 +171,7 @@ export function useDemoMode({ addTranscriptEntry, triggerAnalysis }) {
     isPaused,
     isComplete,
     currentLine,
+    narratorMessage,
     startDemo,
     pauseDemo,
     resumeDemo,
