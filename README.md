@@ -7,7 +7,7 @@ PARLEY listens to your live negotiation and provides real-time tactical intellig
 ## Features
 
 - **Live Transcript** — Real-time speech-to-text with speaker labels
-- **Tactic Detection** — Flags manipulation tactics as they happen (anchoring, false urgency, guilt-tripping, etc.)
+- **Tactic Detection** — Flags manipulation tactics (anchoring, false urgency, guilt-tripping, etc.)
 - **Counter Moves** — Specific phrases and strategies to say next
 - **Power Shift Meter** — Live visualization of who has leverage
 - **Two-Player Mode** — Two people connect via room code, each gets their own AI agent
@@ -25,78 +25,154 @@ PARLEY listens to your live negotiation and provides real-time tactical intellig
 
 ## Prerequisites
 
-- **Node.js** 18+ installed
+- **Node.js** 18+
 - **Google Chrome** (required for Web Speech API)
 - **Anthropic API key** — get one at https://console.anthropic.com/
 
-## Setup & Installation
+---
+
+## Quick Start
 
 ```bash
-# 1. Clone the repo
+# Clone
 git clone https://github.com/jithendra1798/YHack2026.git
 cd YHack2026
 
-# 2. Install dependencies
+# Install
 npm install
 
-# 3. Create your .env file with your API key
+# Configure — add your Anthropic API key
 cp .env.example .env
-# Edit .env and add your Anthropic API key:
-# ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxx
+# Edit .env: ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
 
-# 4. Start the app (runs both Vite client + Node.js server)
+# Run
 npm run dev
 ```
 
-Open **http://localhost:5173** in **Google Chrome**.
+Open **http://localhost:5173** in Chrome. You should see both lines in terminal:
 
-## Available Scripts
+```
+[1] PARLEY server running on port 3001
+[0] VITE v8.0.3 ready
+[0] ➜  Local:   http://localhost:5173/
+[0] ➜  Network: http://192.168.x.x:5173/
+```
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start both Vite dev server + Node.js backend |
-| `npm run dev:client` | Start only the Vite frontend |
-| `npm run server` | Start only the Node.js backend |
-| `npm run build` | Build for production |
+---
 
-## How to Use
+## Two-Player Mode: Same Network (LAN)
+
+Both laptops must be on the **same Wi-Fi / Ethernet network**. Only the host laptop needs Node.js and the code installed.
+
+### Host Laptop (runs the server)
+
+```bash
+cd YHack2026
+npm run dev
+```
+
+Note the **Network URL** in the terminal output (e.g., `http://192.168.1.42:5173/`).
+
+Open Chrome → go to `http://localhost:5173`
+
+### Second Laptop (just needs Chrome)
+
+No installation needed. Open Chrome and go to the **Network URL** from the host terminal:
+
+```
+http://192.168.1.42:5173
+```
+
+> Replace `192.168.1.42` with whatever IP the host terminal shows.
+
+### Connecting
+
+1. **Laptop A** → "Two Player" → "Create Room" → gets a code like `KX3P7N`
+2. **Laptop B** → "Two Player" → enters the code → "Join"
+3. Both fill in their private briefing → both click "Ready to Negotiate"
+4. When both ready, click "Start Negotiation"
+5. Both hear each other through browser audio (WebRTC)
+6. Each player gets their own independent AI agent
+7. Use the **AI On/Off** toggle in the header to disable suggestions
+
+### Troubleshooting LAN Connection
+
+| Problem | Fix |
+|---------|-----|
+| "Cannot connect to server" | Make sure both laptops are on the same Wi-Fi network |
+| Page loads but Socket.IO fails | Check that host firewall allows port 3001 (macOS: System Settings → Firewall → allow Node.js) |
+| Room code doesn't work | Make sure you're using the code exactly as shown (6 uppercase characters) |
+| No audio between players | Allow microphone permission in Chrome when prompted |
+
+---
+
+## Two-Player Mode: Deployed Server
+
+When deployed to a cloud platform, both players just open the URL in Chrome. No LAN needed.
+
+### Deploy to Railway / Render / Fly.io
+
+```bash
+# Build the frontend
+npm run build
+
+# The server.js automatically serves the built files from dist/
+# Deploy the entire project — set these environment variables:
+#   ANTHROPIC_API_KEY=sk-ant-api03-xxxxx
+#   PORT=3001 (or whatever the platform assigns)
+#   NODE_ENV=production
+
+# Start command: node server.js
+```
+
+Both players open `https://your-app.railway.app` in Chrome and use Two-Player mode normally.
+
+### Deploy to Vercel
+
+Vercel doesn't support WebSocket (Socket.IO), so two-player mode won't work there. Use Railway, Render, or Fly.io instead. Solo mode and demo mode work on Vercel using the `api/claude.js` serverless function.
+
+---
+
+## All Modes
 
 ### Solo Mode (Live)
 1. Fill in the briefing form (or click a Quick Load scenario)
 2. Click **"Live Session"**
-3. Allow microphone access when Chrome prompts
-4. Toggle between **You** and **Them** speaker buttons as the conversation flows
-5. PARLEY analyzes every exchange and provides real-time coaching
+3. Allow microphone access in Chrome
+4. Toggle between **You** / **Them** speaker buttons as conversation flows
+5. PARLEY analyzes each exchange in real-time
 
 ### Demo Mode
 1. Click **"Run Demo"** — no setup needed
-2. Watches a pre-scripted rent negotiation play out with text-to-speech
-3. Claude analyzes each exchange live — tactic alerts, counter-moves, and power meter all animate
+2. Watches a rent negotiation play out with text-to-speech
+3. Tactic alerts, counter-moves, and power meter all animate live
 
 ### Two-Player Mode
-1. Click **"Two Player"**
-2. **Player A** clicks "Create Room" — gets a 6-character code
-3. **Player B** enters the code and clicks "Join"
-4. Both fill in their private briefing (only they see their goals/strategy)
-5. Both click "Ready" → negotiation begins
-6. Both hear each other through browser audio (WebRTC)
-7. Each player gets their own independent AI agent
-8. Use the **AI On/Off** toggle in the header to disable suggestions
+See the LAN and Deployed sections above.
 
-## Configuration
+---
 
-### Environment Variables
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Vite + server (both needed) |
+| `npm run dev:client` | Vite frontend only |
+| `npm run server` | Node.js server only |
+| `npm run build` | Build frontend for production |
+
+## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key |
 | `PORT` | No | Server port (default: 3001) |
-| `VITE_SERVER_URL` | No | Custom server URL for the client |
+| `VITE_SERVER_URL` | No | Override Socket.IO server URL |
 
 ## Project Structure
 
 ```
-├── server.js                      # Express + Socket.IO server
+├── server.js                      # Express + Socket.IO + static file server
 ├── src/
 │   ├── App.jsx                    # Main app routing
 │   ├── components/
@@ -120,5 +196,5 @@ Open **http://localhost:5173** in **Google Chrome**.
 │       ├── demoScript.js          # Demo negotiation script
 │       └── tactics.js             # Tactic metadata
 └── api/
-    └── claude.js                  # Vercel serverless proxy
+    └── claude.js                  # Vercel serverless proxy (solo mode only)
 ```

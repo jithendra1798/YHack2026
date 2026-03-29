@@ -1,6 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { NEGOTIATION_ANALYST_PROMPT, buildAnalysisPrompt } from '../lib/prompts'
 
+function getApiUrl() {
+  const { protocol, hostname } = window.location
+  if (import.meta.env.DEV) return `${protocol}//${hostname}:3001/api/claude`
+  return '/api/claude'
+}
+
 export function useClaudeAnalysis(transcript, context, transcriptVersion) {
   const [tactics, setTactics] = useState([])
   const [counterMoves, setCounterMoves] = useState([])
@@ -56,7 +62,7 @@ export function useClaudeAnalysis(transcript, context, transcriptVersion) {
         ]
       }
 
-      const response = await fetch('/api/claude', {
+      const response = await fetch(getApiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)

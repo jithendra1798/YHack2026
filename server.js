@@ -3,6 +3,11 @@ import express from 'express'
 import { createServer } from 'http'
 import { Server } from 'socket.io'
 import cors from 'cors'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+import { existsSync } from 'fs'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const app = express()
 const server = createServer(app)
@@ -18,7 +23,7 @@ app.post('/api/claude', async (req, res) => {
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
-      return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set' })
+      return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set in .env file' })
     }
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -36,6 +41,17 @@ app.post('/api/claude', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+// Serve built static files in production
+const distPath = join(__dirname, 'dist')
+if (existsSync(distPath)) {
+  app.use(express.static(distPath))
+  app.get('{*path}', (req, res) => {
+    if (!req.path.startsWith('/api') && !req.path.startsWith('/socket.io')) {
+      res.sendFile(join(distPath, 'index.html'))
+    }
+  })
+}
 
 // Room management
 const rooms = new Map()
@@ -135,5 +151,15 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3001
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`PARLEY server running on http://localhost:${PORT}`)
+  console.log(`PARLEY server running on port ${PORT}`)
+  import('os').then(({ networkInterfaces }) => {
+    const nets = networkInterfaces()
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name]) {
+        if (net.family === 'IPv4' && !net.internal) {
+          console.log(`  Network: http://${net.address}:${PORT}`)
+        }
+      }
+    }
+  }).catch(() => {})
 })

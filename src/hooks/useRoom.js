@@ -1,11 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { io } from 'socket.io-client'
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || (
-  typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? 'http://localhost:3001'
-    : window.location.origin
-)
+function getServerUrl() {
+  if (import.meta.env.VITE_SERVER_URL) return import.meta.env.VITE_SERVER_URL
+  const { protocol, hostname } = window.location
+  // Dev: connect directly to Express server on port 3001 (not through Vite proxy)
+  // Prod: same origin (Express serves both API and static files)
+  if (import.meta.env.DEV) return `${protocol}//${hostname}:3001`
+  return window.location.origin
+}
 
 export function useRoom() {
   const [roomCode, setRoomCode] = useState(null)
@@ -21,22 +24,32 @@ export function useRoom() {
   const signalCallbackRef = useRef(null)
 
   useEffect(() => {
-    const socket = io(SERVER_URL, {
+    const url = getServerUrl()
+    console.log('Socket.IO connecting to:', url)
+
+    const socket = io(url, {
       transports: ['websocket', 'polling'],
-      autoConnect: true
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      timeout: 10000
     })
 
     socket.on('connect', () => {
+      console.log('Socket.IO connected:', socket.id)
       setIsConnected(true)
       setError(null)
     })
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', (reason) => {
+      console.log('Socket.IO disconnected:', reason)
       setIsConnected(false)
     })
 
-    socket.on('connect_error', () => {
-      setError('Cannot connect to server. Make sure the server is running.')
+    socket.on('connect_error', (err) => {
+      console.error('Socket.IO connect error:', err.message)
+      setError(`Cannot connect to server at ${url}. Make sure the server is running.`)
     })
 
     socket.on('peer-joined', () => {
@@ -75,8 +88,8 @@ export function useRoom() {
 
   const createRoom = useCallback(() => {
     return new Promise((resolve, reject) => {
-      if (!socketRef.current) {
-        reject(new Error('Not connected'))
+      if (!socketRef.current?.connected) {
+        reject(new Error('Not connected to server'))
         return
       }
       socketRef.current.emit('create-room', (response) => {
@@ -95,8 +108,8 @@ export function useRoom() {
 
   const joinRoom = useCallback((code) => {
     return new Promise((resolve, reject) => {
-      if (!socketRef.current) {
-        reject(new Error('Not connected'))
+      if (!socketRef.current?.connected) {
+        reject(new Error('Not connected to server'))
         return
       }
       socketRef.current.emit('join-room', code.toUpperCase(), (response) => {
@@ -115,7 +128,7 @@ export function useRoom() {
   }, [])
 
   const sendTranscriptEntry = useCallback((entry) => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('transcript-entry', entry)
     }
   }, [])
@@ -125,7 +138,7 @@ export function useRoom() {
   }, [])
 
   const sendSignal = useCallback((data) => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('webrtc-signal', data)
     }
   }, [])
@@ -135,7 +148,7 @@ export function useRoom() {
   }, [])
 
   const playerReady = useCallback(() => {
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('player-ready')
     }
   }, [])
