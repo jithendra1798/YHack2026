@@ -62,7 +62,17 @@ export function useClaudeAnalysis(transcript, context, transcriptVersion) {
         body: JSON.stringify(requestBody)
       })
 
-      const data = await response.json()
+      const rawText = await response.text()
+      if (!rawText || !rawText.trim()) {
+        throw new Error('Empty response from server. Is the server running? Run: npm run dev')
+      }
+
+      let data
+      try {
+        data = JSON.parse(rawText)
+      } catch {
+        throw new Error('Server returned invalid JSON. Check server logs.')
+      }
 
       if (!response.ok) {
         const errMsg = data.error?.message || data.error || `HTTP ${response.status}`
@@ -74,7 +84,12 @@ export function useClaudeAnalysis(transcript, context, transcriptVersion) {
       let text = data.content?.map((c) => c.text || '').join('') || ''
       text = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim()
 
-      const parsed = JSON.parse(text)
+      let parsed
+      try {
+        parsed = JSON.parse(text)
+      } catch {
+        throw new Error('Claude returned invalid JSON. Retrying...')
+      }
 
       if (parsed.tactics_detected?.length) {
         const newTactics = parsed.tactics_detected.map((t) => ({
