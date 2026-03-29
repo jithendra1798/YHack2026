@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 
-export default function Header({ mode, isListening, onBack, roomCode, peerConnected, agentEnabled, onToggleAgent, isMuted, onToggleMute, onEndCall }) {
+export default function Header({ mode, isListening, onBack, roomCode, peerConnected, agentEnabled, onToggleAgent, isMuted, onToggleMute, onEndCall, showTranscript, onToggleTranscript }) {
   return (
     <header className="relative flex items-center justify-between px-5 py-3 border-b border-white/[0.04] bg-[#06060b]/90 backdrop-blur-2xl z-50">
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00f0ff]/10 to-transparent" />
@@ -85,6 +85,33 @@ export default function Header({ mode, isListening, onBack, roomCode, peerConnec
               />
             </div>
             AI {agentEnabled ? 'On' : 'Off'}
+          </button>
+        )}
+
+        {onToggleTranscript !== undefined && (
+          <button
+            onClick={onToggleTranscript}
+            className={`p-2 rounded-lg transition-all duration-200 ${
+              showTranscript
+                ? 'bg-white/[0.03] text-white/40 border border-white/[0.06] hover:text-white/60'
+                : 'bg-[#a78bfa]/15 text-[#a78bfa] border border-[#a78bfa]/25'
+            }`}
+            title={showTranscript ? 'Hide Transcript' : 'Show Transcript'}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              {showTranscript ? (
+                <>
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </>
+              ) : (
+                <>
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </>
+              )}
+            </svg>
           </button>
         )}
 

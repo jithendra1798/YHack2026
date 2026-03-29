@@ -131,6 +131,13 @@ io.on('connection', (socket) => {
     socket.to(code).emit('webrtc-signal', data)
   })
 
+  socket.on('end-session', () => {
+    const code = socket.data.roomCode
+    if (!code) return
+    socket.to(code).emit('peer-ended')
+    console.log(`${socket.id} ended session in room ${code}`)
+  })
+
   socket.on('disconnect', () => {
     const code = socket.data.roomCode
     if (code) {

@@ -13,6 +13,7 @@ import { useWebRTC } from '../hooks/useWebRTC'
 export default function SessionScreen({ context, mode, room, onBack }) {
   const [agentEnabled, setAgentEnabled] = useState(true)
   const [isMuted, setIsMuted] = useState(false)
+  const [showTranscript, setShowTranscript] = useState(true)
 
   const {
     transcript,
@@ -27,6 +28,7 @@ export default function SessionScreen({ context, mode, room, onBack }) {
     stopListening,
     setSpeaker,
     addTranscriptEntry,
+    updateOrAddRemoteEntry,
     clearTranscript
   } = useSpeechRecognition()
 
@@ -79,7 +81,11 @@ export default function SessionScreen({ context, mode, room, onBack }) {
     startListening()
 
     room.onRemoteTranscript((entry) => {
-      addTranscriptEntry(entry)
+      updateOrAddRemoteEntry(entry)
+    })
+
+    room.onPeerEnded(() => {
+      handleEnd()
     })
 
     return () => {
@@ -93,12 +99,17 @@ export default function SessionScreen({ context, mode, room, onBack }) {
     setSpeaker('you')
   }, [isVersus, setSpeaker])
 
+  // Send local transcript to peer — include sourceId for append-matching
   useEffect(() => {
     if (!isVersus || !room) return
     if (transcript.length === 0) return
     const lastEntry = transcript[transcript.length - 1]
     if (lastEntry.speaker === 'you') {
-      room.sendTranscriptEntry(lastEntry)
+      room.sendTranscriptEntry({
+        speaker: lastEntry.speaker,
+        text: lastEntry.text,
+        sourceId: lastEntry.id
+      })
     }
   }, [transcriptVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -118,9 +129,12 @@ export default function SessionScreen({ context, mode, room, onBack }) {
   }
 
   const handleEnd = () => {
+    if (isVersus && room) {
+      room.endSession()
+      webrtc.endCall()
+    }
     stopListening()
     demoMode.stopDemo()
-    if (isVersus) webrtc.endCall()
     clearTranscript()
     resetAnalysis()
     onBack()
@@ -148,6 +162,8 @@ export default function SessionScreen({ context, mode, room, onBack }) {
           isMuted={isMuted}
           onToggleMute={(mode === 'live' || mode === 'versus') ? handleToggleMute : undefined}
           onEndCall={(mode === 'live' || mode === 'versus') ? handleEnd : undefined}
+          showTranscript={showTranscript}
+          onToggleTranscript={() => setShowTranscript((v) => !v)}
         />
 
         {!isSupported && (mode === 'live' || mode === 'versus') && (
@@ -184,52 +200,54 @@ export default function SessionScreen({ context, mode, room, onBack }) {
         )}
 
         <div className="flex-1 flex min-h-0">
-          <div className={`${agentEnabled ? 'w-[40%]' : 'w-full'} border-r border-white/[0.04] flex flex-col relative transition-all duration-500`}>
-            {agentEnabled && (
-              <div className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#00f0ff]/8 to-transparent" />
-            )}
+          {showTranscript && (
+            <div className={`${agentEnabled ? 'w-[40%]' : 'w-full'} border-r border-white/[0.04] flex flex-col relative transition-all duration-500`}>
+              {agentEnabled && (
+                <div className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#00f0ff]/8 to-transparent" />
+              )}
 
-            <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-white/[0.04]">
-              <div className="flex items-center justify-center w-5 h-5 rounded bg-white/[0.04]">
-                <span className="text-[11px] opacity-50">📝</span>
+              <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-white/[0.04]">
+                <div className="flex items-center justify-center w-5 h-5 rounded bg-white/[0.04]">
+                  <span className="text-[11px] opacity-50">📝</span>
+                </div>
+                <h3 className="text-white/40 text-[11px] font-bold uppercase tracking-[0.15em]">
+                  Transcript
+                </h3>
+                {isVersus && webrtc.isCallActive && (
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <div className="w-[5px] h-[5px] rounded-full bg-[#00ff88] shadow-[0_0_8px_rgba(0,255,136,0.5)]" />
+                    <span className="text-[#00ff88]/40 text-[9px] font-bold tracking-wider uppercase">Connected</span>
+                  </div>
+                )}
+                {isListening && !isVersus && !isMuted && (
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <div className="w-[5px] h-[5px] rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" />
+                    <span className="text-red-400/40 text-[9px] font-bold tracking-wider uppercase">Rec</span>
+                  </div>
+                )}
+                {isMuted && (
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <span className="text-[#ff3b5c]/40 text-[9px] font-bold tracking-wider uppercase">Muted</span>
+                  </div>
+                )}
               </div>
-              <h3 className="text-white/40 text-[11px] font-bold uppercase tracking-[0.15em]">
-                Transcript
-              </h3>
-              {isVersus && webrtc.isCallActive && (
-                <div className="ml-auto flex items-center gap-1.5">
-                  <div className="w-[5px] h-[5px] rounded-full bg-[#00ff88] shadow-[0_0_8px_rgba(0,255,136,0.5)]" />
-                  <span className="text-[#00ff88]/40 text-[9px] font-bold tracking-wider uppercase">Connected</span>
-                </div>
-              )}
-              {isListening && !isVersus && !isMuted && (
-                <div className="ml-auto flex items-center gap-1.5">
-                  <div className="w-[5px] h-[5px] rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" />
-                  <span className="text-red-400/40 text-[9px] font-bold tracking-wider uppercase">Rec</span>
-                </div>
-              )}
-              {isMuted && (
-                <div className="ml-auto flex items-center gap-1.5">
-                  <span className="text-[#ff3b5c]/40 text-[9px] font-bold tracking-wider uppercase">Muted</span>
-                </div>
-              )}
+              <div className="flex-1 min-h-0">
+                <Transcript
+                  transcript={transcript}
+                  interimText={isMuted ? '' : interimText}
+                  currentSpeaker={currentSpeaker}
+                  isListening={isListening && !isMuted}
+                  onSpeakerChange={setSpeaker}
+                  mode={mode}
+                />
+              </div>
             </div>
-            <div className="flex-1 min-h-0">
-              <Transcript
-                transcript={transcript}
-                interimText={isMuted ? '' : interimText}
-                currentSpeaker={currentSpeaker}
-                isListening={isListening && !isMuted}
-                onSpeakerChange={setSpeaker}
-                mode={mode}
-              />
-            </div>
-          </div>
+          )}
 
           {agentEnabled && (
             <div className="flex-1 flex flex-col min-h-0">
               <div className="flex-1 min-h-0 overflow-y-auto">
-                <div className="h-[55%] min-h-[220px] border-b border-white/[0.04] relative">
+                <div className={`${showTranscript ? 'h-[55%]' : 'h-[50%]'} min-h-[220px] border-b border-white/[0.04] relative`}>
                   <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#ff3b5c]/8 to-transparent" />
                   <TacticAlertFeed tactics={tactics} />
                 </div>
@@ -241,6 +259,12 @@ export default function SessionScreen({ context, mode, room, onBack }) {
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {!agentEnabled && !showTranscript && (
+            <div className="flex-1 flex items-center justify-center text-white/10 text-sm">
+              Transcript and AI hidden. Use header toggles to show.
             </div>
           )}
         </div>

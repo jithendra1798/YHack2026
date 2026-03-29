@@ -2,7 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' }
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:stun2.l.google.com:19302' }
 ]
 
 export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
@@ -15,6 +16,19 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
   const pendingCandidatesRef = useRef([])
   const startedRef = useRef(false)
 
+  const ensureAudioElement = useCallback(() => {
+    if (!remoteAudioRef.current) {
+      const audio = document.createElement('audio')
+      audio.autoplay = true
+      audio.playsInline = true
+      audio.setAttribute('playsinline', '')
+      audio.style.display = 'none'
+      document.body.appendChild(audio)
+      remoteAudioRef.current = audio
+    }
+    return remoteAudioRef.current
+  }, [])
+
   const createPeerConnection = useCallback(() => {
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
 
@@ -25,26 +39,34 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
     }
 
     pc.ontrack = (event) => {
-      if (!remoteAudioRef.current) {
-        const audio = document.createElement('audio')
-        audio.autoplay = true
-        audio.playsInline = true
-        audio.style.display = 'none'
-        document.body.appendChild(audio)
-        remoteAudioRef.current = audio
-      }
-      remoteAudioRef.current.srcObject = event.streams[0]
+      console.log('WebRTC: received remote track', event.track.kind)
+      const audio = ensureAudioElement()
+      audio.srcObject = event.streams[0]
+      audio.play().catch((e) => {
+        console.warn('Audio autoplay blocked, will retry on user interaction:', e)
+        const resumeAudio = () => {
+          audio.play().catch(() => {})
+          document.removeEventListener('click', resumeAudio)
+          document.removeEventListener('touchstart', resumeAudio)
+        }
+        document.addEventListener('click', resumeAudio)
+        document.addEventListener('touchstart', resumeAudio)
+      })
       setIsCallActive(true)
     }
 
-    pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+    pc.oniceconnectionstatechange = () => {
+      console.log('WebRTC ICE state:', pc.iceConnectionState)
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        setIsCallActive(true)
+      }
+      if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed') {
         setIsCallActive(false)
       }
     }
 
     return pc
-  }, [sendSignal])
+  }, [sendSignal, ensureAudioElement])
 
   const startCall = useCallback(async () => {
     if (startedRef.current) return
@@ -61,12 +83,12 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
       stream.getTracks().forEach((track) => pc.addTrack(track, stream))
 
       for (const candidate of pendingCandidatesRef.current) {
-        await pc.addIceCandidate(candidate)
+        try { await pc.addIceCandidate(candidate) } catch (e) { /* ignore */ }
       }
       pendingCandidatesRef.current = []
 
       if (isInitiator) {
-        const offer = await pc.createOffer()
+        const offer = await pc.createOffer({ offerToReceiveAudio: true })
         await pc.setLocalDescription(offer)
         sendSignal({ type: 'offer', sdp: offer })
       }
@@ -80,33 +102,32 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
     if (!onSignal) return
 
     onSignal(async (data) => {
-      const pc = pcRef.current
+      try {
+        let pc = pcRef.current
 
-      if (data.type === 'offer') {
-        if (!pc) {
-          await startCall()
-          const currentPc = pcRef.current
-          if (!currentPc) return
-          await currentPc.setRemoteDescription(new RTCSessionDescription(data.sdp))
-          const answer = await currentPc.createAnswer()
-          await currentPc.setLocalDescription(answer)
-          sendSignal({ type: 'answer', sdp: answer })
-        } else {
+        if (data.type === 'offer') {
+          if (!pc) {
+            await startCall()
+            pc = pcRef.current
+          }
+          if (!pc) return
           await pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
           const answer = await pc.createAnswer()
           await pc.setLocalDescription(answer)
           sendSignal({ type: 'answer', sdp: answer })
+        } else if (data.type === 'answer') {
+          if (pc && pc.signalingState !== 'stable') {
+            await pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+          }
+        } else if (data.type === 'ice-candidate') {
+          if (pc && pc.remoteDescription) {
+            await pc.addIceCandidate(new RTCIceCandidate(data.candidate))
+          } else {
+            pendingCandidatesRef.current.push(new RTCIceCandidate(data.candidate))
+          }
         }
-      } else if (data.type === 'answer') {
-        if (pc && pc.signalingState !== 'stable') {
-          await pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
-        }
-      } else if (data.type === 'ice-candidate') {
-        if (pc && pc.remoteDescription) {
-          await pc.addIceCandidate(new RTCIceCandidate(data.candidate))
-        } else {
-          pendingCandidatesRef.current.push(new RTCIceCandidate(data.candidate))
-        }
+      } catch (err) {
+        console.error('WebRTC signal handling error:', err)
       }
     })
   }, [onSignal, startCall, sendSignal])

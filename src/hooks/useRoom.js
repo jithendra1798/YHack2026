@@ -18,10 +18,12 @@ export function useRoom() {
   const [role, setRole] = useState(null)
   const [error, setError] = useState(null)
   const [peerLeft, setPeerLeft] = useState(false)
+  const [peerEnded, setPeerEnded] = useState(false)
 
   const socketRef = useRef(null)
   const remoteTranscriptCallbackRef = useRef(null)
   const signalCallbackRef = useRef(null)
+  const peerEndedCallbackRef = useRef(null)
 
   useEffect(() => {
     const url = getServerUrl()
@@ -76,6 +78,13 @@ export function useRoom() {
     socket.on('webrtc-signal', (data) => {
       if (signalCallbackRef.current) {
         signalCallbackRef.current(data)
+      }
+    })
+
+    socket.on('peer-ended', () => {
+      setPeerEnded(true)
+      if (peerEndedCallbackRef.current) {
+        peerEndedCallbackRef.current()
       }
     })
 
@@ -153,6 +162,16 @@ export function useRoom() {
     }
   }, [])
 
+  const endSession = useCallback(() => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit('end-session')
+    }
+  }, [])
+
+  const onPeerEnded = useCallback((callback) => {
+    peerEndedCallbackRef.current = callback
+  }, [])
+
   const leaveRoom = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.disconnect()
@@ -163,6 +182,7 @@ export function useRoom() {
     setPeerConnected(false)
     setBothReady(false)
     setPeerLeft(false)
+    setPeerEnded(false)
   }, [])
 
   return {
@@ -173,6 +193,7 @@ export function useRoom() {
     role,
     error,
     peerLeft,
+    peerEnded,
     createRoom,
     joinRoom,
     sendTranscriptEntry,
@@ -180,6 +201,8 @@ export function useRoom() {
     sendSignal,
     onSignal,
     playerReady,
+    endSession,
+    onPeerEnded,
     leaveRoom
   }
 }

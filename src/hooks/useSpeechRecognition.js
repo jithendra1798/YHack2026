@@ -188,6 +188,34 @@ export function useSpeechRecognition() {
     setTranscriptVersion((v) => v + 1)
   }, [])
 
+  const updateOrAddRemoteEntry = useCallback((entry) => {
+    const arr = transcriptRef.current
+    const sourceId = entry.sourceId
+
+    if (sourceId && arr.length > 0) {
+      const lastIdx = arr.length - 1
+      const existing = arr[lastIdx]
+      if (existing.sourceId === sourceId && existing.speaker === entry.speaker) {
+        arr[lastIdx] = { ...existing, text: entry.text }
+        transcriptRef.current = [...arr]
+        setTranscript([...transcriptRef.current])
+        setTranscriptVersion((v) => v + 1)
+        return
+      }
+    }
+
+    const newEntry = {
+      speaker: entry.speaker,
+      text: entry.text,
+      timestamp: new Date(),
+      id: Date.now() + Math.random(),
+      sourceId: sourceId
+    }
+    transcriptRef.current = [...transcriptRef.current, newEntry]
+    setTranscript([...transcriptRef.current])
+    setTranscriptVersion((v) => v + 1)
+  }, [])
+
   const clearTranscript = useCallback(() => {
     transcriptRef.current = []
     setTranscript([])
@@ -209,6 +237,7 @@ export function useSpeechRecognition() {
     stopListening,
     setSpeaker,
     addTranscriptEntry,
+    updateOrAddRemoteEntry,
     clearTranscript
   }
 }
