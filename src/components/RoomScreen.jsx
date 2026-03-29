@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const NEGOTIATION_TYPES = [
@@ -10,6 +10,22 @@ const NEGOTIATION_TYPES = [
   'Freelance Rate',
   'Other'
 ]
+
+const HOST_PRESETS = {
+  negotiationType: 'Rent Renewal',
+  userGoal: 'Keep rent at $2,400 or max $100 increase',
+  otherPartyRole: 'Landlord / Property Manager',
+  keyFacts: '3 years perfect payment. Comparable units avg $2,100-$2,300. Building 15% vacancy.',
+  batna: 'Comparable unit at $2,150/month on Zillow nearby'
+}
+
+const GUEST_PRESETS = {
+  negotiationType: 'Rent Renewal',
+  userGoal: 'Increase rent to $3,000 to match market rates',
+  otherPartyRole: 'Tenant',
+  keyFacts: 'Market rates have risen 20%. Building renovated lobby and gym. Owner wants market rate.',
+  batna: 'Can find new tenant at $3,200 market rate'
+}
 
 export default function RoomScreen({ room, onReady, onBack }) {
   const {
@@ -35,6 +51,22 @@ export default function RoomScreen({ room, onReady, onBack }) {
     batna: ''
   })
   const [submitted, setSubmitted] = useState(false)
+
+  // Pre-fill context based on role
+  useEffect(() => {
+    if (role === 'host') {
+      setContext(HOST_PRESETS)
+    } else if (role === 'guest') {
+      setContext(GUEST_PRESETS)
+    }
+  }, [role])
+
+  // Auto-start when both ready
+  useEffect(() => {
+    if (bothReady && submitted) {
+      onReady(context)
+    }
+  }, [bothReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCreate = async () => {
     try {
@@ -70,7 +102,6 @@ export default function RoomScreen({ room, onReady, onBack }) {
 
   const inputClass = 'w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-4 py-3 text-white/90 text-sm placeholder:text-white/15 focus:outline-none focus:border-[#00f0ff]/40 focus:bg-white/[0.05] transition-all duration-300'
 
-  // Phase 1: Create or Join
   if (!roomCode) {
     return (
       <div className="min-h-screen bg-[#06060b] flex items-center justify-center p-4 relative overflow-hidden">
@@ -120,7 +151,7 @@ export default function RoomScreen({ room, onReady, onBack }) {
                 <span className="text-lg">+</span>
               </div>
               <h3 className="text-white font-semibold mb-1">Create Room</h3>
-              <p className="text-white/25 text-xs">Get a code to share with your opponent</p>
+              <p className="text-white/25 text-xs">You&apos;re the negotiator</p>
             </motion.button>
 
             <div className="glass-card rounded-2xl p-6">
@@ -155,7 +186,6 @@ export default function RoomScreen({ room, onReady, onBack }) {
     )
   }
 
-  // Phase 2: Waiting for peer + context form
   return (
     <div className="min-h-screen bg-[#06060b] flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 bg-grid-pattern opacity-100" />
@@ -177,7 +207,6 @@ export default function RoomScreen({ room, onReady, onBack }) {
           Leave Room
         </button>
 
-        {/* Room code display */}
         <div className="glass-card rounded-2xl p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
@@ -187,6 +216,11 @@ export default function RoomScreen({ room, onReady, onBack }) {
               </p>
             </div>
             <div className="flex flex-col items-end gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-white/20 text-[9px] uppercase tracking-wider">
+                  You: {role === 'host' ? 'Negotiator' : 'Counter-party'}
+                </span>
+              </div>
               <button
                 onClick={() => navigator.clipboard.writeText(roomCode)}
                 className="px-3 py-1.5 rounded-lg bg-white/[0.04] text-white/40 text-[10px] font-bold hover:bg-white/[0.08] hover:text-white/60 transition-all"
@@ -210,7 +244,7 @@ export default function RoomScreen({ room, onReady, onBack }) {
         )}
 
         <AnimatePresence>
-          {peerConnected && !submitted && (
+          {!submitted && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -221,7 +255,7 @@ export default function RoomScreen({ room, onReady, onBack }) {
                   Your Private Briefing
                 </h2>
                 <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                <span className="text-white/15 text-[9px]">Only you see this</span>
+                <span className="text-white/15 text-[9px]">Pre-filled &bull; edit if needed</span>
               </div>
 
               <div className="space-y-3">
@@ -261,7 +295,7 @@ export default function RoomScreen({ room, onReady, onBack }) {
                 whileHover={isFormValid ? { scale: 1.01 } : {}}
                 whileTap={isFormValid ? { scale: 0.99 } : {}}
               >
-                Ready to Negotiate
+                {peerConnected ? 'Ready — Start When Opponent Ready' : 'Ready — Waiting for Opponent to Join'}
               </motion.button>
             </motion.div>
           )}
@@ -280,32 +314,12 @@ export default function RoomScreen({ room, onReady, onBack }) {
                 <span className="text-xl">✓</span>
               </motion.div>
               <p className="text-white/50 text-sm">You&apos;re ready.</p>
-              <p className="text-white/20 text-xs mt-1">Waiting for opponent to finish briefing...</p>
-            </motion.div>
-          )}
-
-          {bothReady && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="glass-card rounded-2xl p-8 text-center"
-            >
-              <motion.div
-                className="w-14 h-14 rounded-xl bg-[#00ff88]/10 flex items-center justify-center mx-auto mb-4"
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 0.5 }}
-              >
-                <span className="text-2xl">⚔</span>
-              </motion.div>
-              <p className="text-white/70 text-sm font-semibold mb-4">Both players ready</p>
-              <motion.button
-                onClick={() => onReady(context)}
-                className="px-8 py-3.5 rounded-xl font-bold text-sm bg-[#00ff88]/10 border border-[#00ff88]/30 text-[#00ff88] hover:bg-[#00ff88]/20 transition-all"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                Start Negotiation
-              </motion.button>
+              <p className="text-white/20 text-xs mt-1">
+                {peerConnected
+                  ? 'Waiting for opponent to submit their briefing...'
+                  : 'Waiting for opponent to join and submit briefing...'}
+              </p>
+              <p className="text-white/10 text-[10px] mt-3">Conversation starts automatically when both are ready</p>
             </motion.div>
           )}
         </AnimatePresence>

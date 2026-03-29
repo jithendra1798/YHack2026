@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import Header from './Header'
 import Transcript from './Transcript'
 import TacticAlertFeed from './TacticAlertFeed'
@@ -12,6 +12,7 @@ import { useWebRTC } from '../hooks/useWebRTC'
 
 export default function SessionScreen({ context, mode, room, onBack }) {
   const [agentEnabled, setAgentEnabled] = useState(true)
+  const [isMuted, setIsMuted] = useState(false)
 
   const {
     transcript,
@@ -50,7 +51,6 @@ export default function SessionScreen({ context, mode, room, onBack }) {
     isInitiator: isVersus && room?.role === 'host'
   })
 
-  // Live mode: start mic
   useEffect(() => {
     if (mode === 'live' && isSupported) {
       startListening()
@@ -58,7 +58,6 @@ export default function SessionScreen({ context, mode, room, onBack }) {
     }
   }, [mode, isSupported, startListening, stopListening])
 
-  // Demo mode: auto-play
   useEffect(() => {
     if (mode === 'demo') {
       clearTranscript()
@@ -73,7 +72,6 @@ export default function SessionScreen({ context, mode, room, onBack }) {
     }
   }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Versus mode: start WebRTC call + mic + listen for remote transcript
   useEffect(() => {
     if (!isVersus || !room) return
 
@@ -90,23 +88,11 @@ export default function SessionScreen({ context, mode, room, onBack }) {
     }
   }, [isVersus]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Versus mode: send local transcript entries to peer
-  const originalAddTranscriptEntry = addTranscriptEntry
-  const versusAwareAddEntry = useCallback((entry) => {
-    originalAddTranscriptEntry(entry)
-    if (isVersus && room && entry.speaker === 'you') {
-      room.sendTranscriptEntry(entry)
-    }
-  }, [isVersus, room, originalAddTranscriptEntry])
-
-  // In versus mode, override the speech recognition to always label as "you" and send to peer
   useEffect(() => {
     if (!isVersus) return
-    // Keep speaker as "you" in versus mode — no toggle needed
     setSpeaker('you')
   }, [isVersus, setSpeaker])
 
-  // Send transcript entries from speech recognition to the room
   useEffect(() => {
     if (!isVersus || !room) return
     if (transcript.length === 0) return
@@ -116,12 +102,25 @@ export default function SessionScreen({ context, mode, room, onBack }) {
     }
   }, [transcriptVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleBack = () => {
+  const handleToggleMute = () => {
+    if (isMuted) {
+      startListening()
+      if (webrtc.localStream) {
+        webrtc.localStream.getAudioTracks().forEach((t) => { t.enabled = true })
+      }
+    } else {
+      stopListening()
+      if (webrtc.localStream) {
+        webrtc.localStream.getAudioTracks().forEach((t) => { t.enabled = false })
+      }
+    }
+    setIsMuted(!isMuted)
+  }
+
+  const handleEnd = () => {
     stopListening()
     demoMode.stopDemo()
-    if (isVersus) {
-      webrtc.endCall()
-    }
+    if (isVersus) webrtc.endCall()
     clearTranscript()
     resetAnalysis()
     onBack()
@@ -140,18 +139,21 @@ export default function SessionScreen({ context, mode, room, onBack }) {
       <div className="relative z-10 flex flex-col h-full">
         <Header
           mode={mode}
-          isListening={isListening}
-          onBack={handleBack}
+          isListening={isListening && !isMuted}
+          onBack={mode === 'demo' ? handleEnd : null}
           roomCode={isVersus ? room?.roomCode : null}
           peerConnected={isVersus ? room?.peerConnected : false}
           agentEnabled={agentEnabled}
           onToggleAgent={() => setAgentEnabled((v) => !v)}
+          isMuted={isMuted}
+          onToggleMute={(mode === 'live' || mode === 'versus') ? handleToggleMute : undefined}
+          onEndCall={(mode === 'live' || mode === 'versus') ? handleEnd : undefined}
         />
 
         {!isSupported && (mode === 'live' || mode === 'versus') && (
           <div className="px-6 py-2.5 bg-[#ff6b35]/[0.08] border-b border-[#ff6b35]/20">
             <p className="text-[#ff6b35] text-[12px] text-center font-medium">
-              Speech recognition requires Google Chrome. Demo mode works in any browser.
+              Speech recognition requires Google Chrome.
             </p>
           </div>
         )}
@@ -159,7 +161,6 @@ export default function SessionScreen({ context, mode, room, onBack }) {
         {micError && (mode === 'live' || mode === 'versus') && (
           <div className="px-6 py-3 bg-[#ff6b35]/[0.08] border-b border-[#ff6b35]/20">
             <div className="flex items-center justify-center gap-3">
-              <span className="text-[#ff6b35] text-sm">🎤</span>
               <p className="text-[#ff6b35] text-[12px] font-medium">{micError}</p>
               {permissionDenied && (
                 <button onClick={handleRetryMic} className="ml-2 px-3 py-1 rounded-md text-[11px] font-bold bg-[#ff6b35]/15 text-[#ff6b35] border border-[#ff6b35]/25 hover:bg-[#ff6b35]/25 transition-all">
@@ -198,27 +199,27 @@ export default function SessionScreen({ context, mode, room, onBack }) {
               {isVersus && webrtc.isCallActive && (
                 <div className="ml-auto flex items-center gap-1.5">
                   <div className="w-[5px] h-[5px] rounded-full bg-[#00ff88] shadow-[0_0_8px_rgba(0,255,136,0.5)]" />
-                  <span className="text-[#00ff88]/40 text-[9px] font-bold tracking-wider uppercase">Call Active</span>
+                  <span className="text-[#00ff88]/40 text-[9px] font-bold tracking-wider uppercase">Connected</span>
                 </div>
               )}
-              {isListening && !isVersus && (
+              {isListening && !isVersus && !isMuted && (
                 <div className="ml-auto flex items-center gap-1.5">
                   <div className="w-[5px] h-[5px] rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-pulse" />
                   <span className="text-red-400/40 text-[9px] font-bold tracking-wider uppercase">Rec</span>
                 </div>
               )}
-              {!isListening && (mode === 'live' || mode === 'versus') && !micError && (
-                <button onClick={startListening} className="ml-auto text-[9px] font-bold px-2 py-1 rounded bg-[#00f0ff]/10 text-[#00f0ff]/60 border border-[#00f0ff]/15 hover:bg-[#00f0ff]/20 transition-all">
-                  Start Mic
-                </button>
+              {isMuted && (
+                <div className="ml-auto flex items-center gap-1.5">
+                  <span className="text-[#ff3b5c]/40 text-[9px] font-bold tracking-wider uppercase">Muted</span>
+                </div>
               )}
             </div>
             <div className="flex-1 min-h-0">
               <Transcript
                 transcript={transcript}
-                interimText={interimText}
+                interimText={isMuted ? '' : interimText}
                 currentSpeaker={currentSpeaker}
-                isListening={isListening}
+                isListening={isListening && !isMuted}
                 onSpeakerChange={setSpeaker}
                 mode={mode}
               />
@@ -259,7 +260,7 @@ export default function SessionScreen({ context, mode, room, onBack }) {
           currentLine={demoMode.currentLine}
           onPause={demoMode.pauseDemo}
           onResume={demoMode.resumeDemo}
-          onStop={handleBack}
+          onStop={handleEnd}
         />
       )}
     </div>

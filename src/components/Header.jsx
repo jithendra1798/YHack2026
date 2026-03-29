@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion'
 
-export default function Header({ mode, isListening, onBack, roomCode, peerConnected, agentEnabled, onToggleAgent }) {
+export default function Header({ mode, isListening, onBack, roomCode, peerConnected, agentEnabled, onToggleAgent, isMuted, onToggleMute, onEndCall }) {
   return (
     <header className="relative flex items-center justify-between px-5 py-3 border-b border-white/[0.04] bg-[#06060b]/90 backdrop-blur-2xl z-50">
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00f0ff]/10 to-transparent" />
 
       <div className="flex items-center gap-3">
-        {onBack && (
+        {onBack && !onEndCall && (
           <motion.button
             onClick={onBack}
             className="text-white/25 hover:text-white/70 transition-colors p-1 rounded-lg hover:bg-white/[0.04]"
@@ -67,7 +67,7 @@ export default function Header({ mode, isListening, onBack, roomCode, peerConnec
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {onToggleAgent !== undefined && (
           <button
             onClick={onToggleAgent}
@@ -88,7 +88,45 @@ export default function Header({ mode, isListening, onBack, roomCode, peerConnec
           </button>
         )}
 
-        {(mode === 'live' || mode === 'versus') && isListening && (
+        {onToggleMute !== undefined && (
+          <motion.button
+            onClick={onToggleMute}
+            className={`p-2 rounded-lg transition-all duration-200 ${
+              isMuted
+                ? 'bg-[#ff3b5c]/15 text-[#ff3b5c] border border-[#ff3b5c]/25'
+                : 'bg-white/[0.03] text-white/40 border border-white/[0.06] hover:text-white/60'
+            }`}
+            whileTap={{ scale: 0.9 }}
+            title={isMuted ? 'Unmute' : 'Mute'}
+          >
+            {isMuted ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="1" y1="1" x2="23" y2="23" />
+                <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2c0 .76-.12 1.49-.34 2.18" />
+                <line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            )}
+          </motion.button>
+        )}
+
+        {onEndCall && (
+          <motion.button
+            onClick={onEndCall}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ff3b5c]/10 text-[#ff3b5c] text-[10px] font-bold uppercase tracking-wider border border-[#ff3b5c]/20 hover:bg-[#ff3b5c]/20 transition-all"
+            whileTap={{ scale: 0.95 }}
+          >
+            End
+          </motion.button>
+        )}
+
+        {(mode === 'live' || mode === 'versus') && isListening && !isMuted && (
           <div className="flex items-center gap-1">
             {[...Array(4)].map((_, i) => (
               <motion.div
