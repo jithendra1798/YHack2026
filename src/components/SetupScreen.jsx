@@ -48,7 +48,7 @@ const QUICK_SCENARIOS = [
   }
 ]
 
-export default function SetupScreen({ onStartLive, onStartDemo }) {
+export default function SetupScreen({ onStartLive, onStartDemo, onStartVersus }) {
   const [context, setContext] = useState({
     negotiationType: '',
     userGoal: '',
@@ -213,7 +213,7 @@ export default function SetupScreen({ onStartLive, onStartDemo }) {
             <motion.button
               onClick={() => isValid && onStartLive(context)}
               disabled={!isValid}
-              className={`flex-1 relative group flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl font-semibold text-sm transition-all duration-300 overflow-hidden ${
+              className={`flex-1 relative group flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300 overflow-hidden ${
                 isValid
                   ? 'text-[#00f0ff] border border-[#00f0ff]/30 hover:border-[#00f0ff]/60'
                   : 'text-white/15 border border-white/[0.05] cursor-not-allowed'
@@ -225,18 +225,29 @@ export default function SetupScreen({ onStartLive, onStartDemo }) {
                 <div className="absolute inset-0 bg-[#00f0ff]/[0.06] group-hover:bg-[#00f0ff]/[0.1] transition-all" />
               )}
               <span className="relative text-base">🎤</span>
-              <span className="relative">Start Live Session</span>
+              <span className="relative">Live Session</span>
             </motion.button>
 
             <motion.button
               onClick={() => onStartDemo(DEMO_CONTEXT)}
-              className="flex-1 relative group flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl font-semibold text-sm text-white/50 border border-white/[0.08] hover:text-white/90 hover:border-[#00ff88]/30 transition-all duration-300 overflow-hidden"
+              className="flex-1 relative group flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl font-semibold text-sm text-white/50 border border-white/[0.08] hover:text-white/90 hover:border-[#00ff88]/30 transition-all duration-300 overflow-hidden"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
             >
               <div className="absolute inset-0 bg-white/[0.02] group-hover:bg-[#00ff88]/[0.05] transition-all" />
               <span className="relative text-base">▶</span>
               <span className="relative">Run Demo</span>
+            </motion.button>
+
+            <motion.button
+              onClick={onStartVersus}
+              className="flex-1 relative group flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl font-semibold text-sm text-white/50 border border-white/[0.08] hover:text-white/90 hover:border-[#a78bfa]/30 transition-all duration-300 overflow-hidden"
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+            >
+              <div className="absolute inset-0 bg-white/[0.02] group-hover:bg-[#a78bfa]/[0.05] transition-all" />
+              <span className="relative text-base">⚔</span>
+              <span className="relative">Two Player</span>
             </motion.button>
           </div>
         </motion.div>
