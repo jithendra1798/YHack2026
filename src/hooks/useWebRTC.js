@@ -17,6 +17,8 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
   const startedRef = useRef(false)
   const sendSignalRef = useRef(sendSignal)
   const isInitiatorRef = useRef(isInitiator)
+  const pcReadyResolveRef = useRef(null)
+  const pcReadyPromiseRef = useRef(null)
 
   useEffect(() => { sendSignalRef.current = sendSignal }, [sendSignal])
   useEffect(() => { isInitiatorRef.current = isInitiator }, [isInitiator])
@@ -45,18 +47,24 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
     }
 
     pc.ontrack = (e) => {
-      console.log('WebRTC: remote audio track received')
+      console.log('WebRTC: remote audio track received, streams:', e.streams?.length)
       const audio = getOrCreateAudio()
-      audio.srcObject = e.streams[0]
+      if (e.streams && e.streams[0]) {
+        audio.srcObject = e.streams[0]
+      } else {
+        audio.srcObject = new MediaStream([e.track])
+      }
       audio.play().then(() => {
         console.log('WebRTC: audio playing')
-      }).catch(() => {
-        console.warn('WebRTC: autoplay blocked, retrying on click')
+      }).catch((err) => {
+        console.warn('WebRTC: autoplay blocked, retrying on interaction:', err.message)
         const resume = () => {
           audio.play().catch(() => {})
           document.removeEventListener('click', resume)
+          document.removeEventListener('touchstart', resume)
         }
         document.addEventListener('click', resume)
+        document.addEventListener('touchstart', resume)
       })
       setIsCallActive(true)
     }
@@ -64,7 +72,12 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
     pc.oniceconnectionstatechange = () => {
       const state = pc.iceConnectionState
       console.log('WebRTC ICE:', state)
-      if (state === 'connected' || state === 'completed') setIsCallActive(true)
+      if (state === 'connected' || state === 'completed') {
+        setIsCallActive(true)
+        if (remoteAudioRef.current && remoteAudioRef.current.srcObject) {
+          remoteAudioRef.current.play().catch(() => {})
+        }
+      }
       if (state === 'disconnected' || state === 'failed') setIsCallActive(false)
     }
 
@@ -76,6 +89,10 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
     if (startedRef.current) return
     startedRef.current = true
 
+    pcReadyPromiseRef.current = new Promise((resolve) => {
+      pcReadyResolveRef.current = resolve
+    })
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       localStreamRef.current = stream
@@ -83,6 +100,11 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
 
       const pc = createPC()
       stream.getTracks().forEach((track) => pc.addTrack(track, stream))
+
+      if (pcReadyResolveRef.current) {
+        pcReadyResolveRef.current()
+        pcReadyResolveRef.current = null
+      }
 
       for (const c of pendingCandidatesRef.current) {
         try { await pc.addIceCandidate(c) } catch (e) { /* ignore */ }
@@ -100,6 +122,10 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
     } catch (err) {
       console.error('WebRTC startCall error:', err)
       startedRef.current = false
+      if (pcReadyResolveRef.current) {
+        pcReadyResolveRef.current()
+        pcReadyResolveRef.current = null
+      }
     }
   }, [createPC])
 
@@ -109,11 +135,16 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
 
     onSignal(async (data) => {
       try {
+        if (!pcRef.current && pcReadyPromiseRef.current) {
+          console.log('WebRTC: waiting for PC ready before processing:', data.type)
+          await pcReadyPromiseRef.current
+        }
+
         if (data.type === 'offer') {
           console.log('WebRTC: received offer')
-          if (!startedRef.current) {
+          if (!pcRef.current) {
             startedRef.current = true
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const stream = localStreamRef.current || await navigator.mediaDevices.getUserMedia({ audio: true })
             localStreamRef.current = stream
             setLocalStream(stream)
             const pc = createPC()
@@ -168,6 +199,8 @@ export function useWebRTC({ sendSignal, onSignal, isInitiator }) {
     }
     setIsCallActive(false)
     startedRef.current = false
+    pcReadyPromiseRef.current = null
+    pcReadyResolveRef.current = null
   }, [])
 
   useEffect(() => {

@@ -43,7 +43,7 @@ npm run dev    # Runs both: concurrently "vite --host" "node server.js"
 - `src/hooks/useClaudeAnalysis.js` — Debounced Claude API calls triggered by `transcriptVersion` changes. Parses JSON response, handles retries. Uses refs to avoid stale closures.
 - `src/hooks/useDemoMode.js` — Plays `DEMO_SCRIPT` using SpeechSynthesis API with two voices. Triggers Claude analysis after each line.
 - `src/hooks/useRoom.js` — Socket.IO client. Room create/join, transcript relay, WebRTC signaling, player-ready sync, end-session. Connects to `hostname:3001` in dev, same origin in prod.
-- `src/hooks/useWebRTC.js` — RTCPeerConnection with STUN servers. Host creates offer, guest answers. Audio streams via hidden `<audio>` element. Uses refs for `sendSignal` to avoid stale closures in signal handler.
+- `src/hooks/useWebRTC.js` — RTCPeerConnection with STUN servers. Host creates offer, guest answers. Audio streams via hidden `<audio>` element. Uses refs for `sendSignal` to avoid stale closures in signal handler. Uses `pcReadyPromise` to prevent race condition where signals arrive before PC is created (see fix below).
 
 ### Components
 - `App.jsx` — Routes between setup → room → session screens. Owns the `useRoom` hook instance.
@@ -74,7 +74,7 @@ npm run dev    # Runs both: concurrently "vite --host" "node server.js"
 - **401 from Claude** — Bad API key in `.env`.
 - **Mic not working** — Must use Chrome. Must allow mic permission.
 - **LAN connection fails** — University/conference WiFi often blocks device-to-device traffic (AP isolation). Use phone hotspot or deploy to Railway.
-- **Audio not playing in versus** — Chrome autoplay policy. User must have clicked something on the page before audio can play (rooms UI provides this).
+- **Audio not playing in versus** — Fixed: Race condition where host's offer arrived at guest while guest's `startCall()` was still awaiting `getUserMedia`. Signal handler saw `startedRef=true` but `pcRef=null` and silently dropped the offer. Fix: added `pcReadyPromise` so signal handler waits for PC to be fully created before processing. Also added fallback for empty `e.streams` in `ontrack`, audio play retry on ICE connect, and `touchstart` listener for mobile autoplay.
 - **Transcript duplicates on remote** — Fixed: remote entries use `sourceId` matching via `updateOrAddRemoteEntry()`.
 
 ## Design
